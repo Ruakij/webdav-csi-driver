@@ -1,9 +1,8 @@
----
-kind: DaemonSet
 apiVersion: apps/v1
+kind: DaemonSet
 metadata:
-  name: csi-webdav-node
-  namespace: kube-system
+  name: webdav-csi-node
+  namespace: {{ .Release.Namespace }}
 spec:
   updateStrategy:
     rollingUpdate:
@@ -11,14 +10,14 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: csi-webdav-node
+      app: webdav-csi-node
   template:
     metadata:
       labels:
-        app: csi-webdav-node
+        app: webdav-csi-node
     spec:
-      hostNetwork: true  # original webdav connection would be broken without hostNetwork setting
-      dnsPolicy: ClusterFirstWithHostNet  # available values: Default, ClusterFirstWithHostNet, ClusterFirst
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: webdav-csi-sa
       priorityClassName: system-node-critical
       securityContext:
@@ -30,8 +29,8 @@ spec:
         - operator: "Exists"
       containers:
         - name: liveness-probe
-          image: registry.k8s.io/sig-storage/livenessprobe:v2.11.0
-          imagePullPolicy: IfNotPresent
+          image: {{ .Values.livenessProbe.image.name }}:{{ .Values.livenessProbe.image.tag }}
+          imagePullPolicy: {{ .Values.livenessProbe.image.pullPolicy }}
           args:
             - --csi-address=/csi/csi.sock
             - --probe-timeout=3s
@@ -63,7 +62,7 @@ spec:
             timeoutSeconds: 15
           env:
             - name: DRIVER_REG_SOCK_PATH
-              value: /var/lib/kubelet/plugins/csi-webdavplugin/csi.sock
+              value: /var/lib/kubelet/plugins/webdav-csiplugin/csi.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -85,8 +84,8 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: localhost:5000/webdavplugin:v0.0.1
-          imagePullPolicy: IfNotPresent
+          image: {{ .Values.node.image.name }}:{{ .Values.node.image.tag }}
+          imagePullPolicy: {{ .Values.node.image.pullPolicy }}
           args:
             - "-v=5"
             - "--nodeid=$(NODE_ID)"
@@ -110,7 +109,6 @@ spec:
             initialDelaySeconds: 30
             timeoutSeconds: 10
             periodSeconds: 30
-          imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
@@ -119,14 +117,14 @@ spec:
               mountPropagation: "Bidirectional"
           resources:
             limits:
-              memory: 300Mi
+              memory: {{ .Values.node.resources.limits.memory }}
             requests:
-              cpu: 10m
-              memory: 20Mi
+              cpu: {{ .Values.node.resources.requests.cpu }}
+              memory: {{ .Values.node.resources.requests.memory }}
       volumes:
         - name: socket-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/csi-webdavplugin
+            path: /var/lib/kubelet/plugins/webdav-csiplugin
             type: DirectoryOrCreate
         - name: pods-mount-dir
           hostPath:

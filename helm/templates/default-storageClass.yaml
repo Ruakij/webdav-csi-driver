@@ -1,0 +1,13 @@
+{{- if .Values.defaultStorageClass }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.defaultStorageClass.name }}
+provisioner: webdav.csi.io
+parameters:
+  {{- toYaml .Values.defaultStorageClass.parameters | nindent 2 }}
+reclaimPolicy: {{ .Values.defaultStorageClass.reclaimPolicy }}
+volumeBindingMode: {{ .Values.defaultStorageClass.volumeBindingMode }}
+mountOptions:
+  {{- toYaml .Values.defaultStorageClass.mountOptions | nindent 2 }}
+{{- end }}

@@ -1,24 +1,23 @@
----
-kind: Deployment
 apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: csi-webdav-controller
-  namespace: kube-system
+  name: webdav-csi-controller
+  namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.controller.replicas }}
   selector:
     matchLabels:
-      app: csi-webdav-controller
+      app: webdav-csi-controller
   template:
     metadata:
       labels:
-        app: csi-webdav-controller
+        app: webdav-csi-controller
     spec:
-      hostNetwork: true  # controller also needs to mount webdav to create dir
-      dnsPolicy: ClusterFirstWithHostNet  # available values: Default, ClusterFirstWithHostNet, ClusterFirst
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: webdav-csi-sa
       nodeSelector:
-        kubernetes.io/os: linux  # add "kubernetes.io/role: master" to run controller on master node
+        kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
       securityContext:
         seccompProfile:
@@ -35,8 +34,8 @@ spec:
           effect: "NoSchedule"
       containers:
         - name: csi-provisioner
-          image: registry.k8s.io/sig-storage/csi-provisioner:v3.6.2
-          imagePullPolicy: IfNotPresent          
+          image: {{ .Values.csiProvisioner.image.name }}:{{ .Values.csiProvisioner.image.tag }}
+          imagePullPolicy: {{ .Values.csiProvisioner.image.pullPolicy }}          
           args:
             - "-v=2"
             - "--csi-address=$(ADDRESS)"
@@ -52,13 +51,13 @@ spec:
               name: socket-dir
           resources:
             limits:
-              memory: 400Mi
+              memory: {{ .Values.controller.resources.limits.memory }}
             requests:
-              cpu: 10m
-              memory: 20Mi
+              cpu: {{ .Values.controller.resources.requests.cpu }}
+              memory: {{ .Values.controller.resources.requests.memory }}
         - name: liveness-probe
-          image: registry.k8s.io/sig-storage/livenessprobe:v2.11.0
-          imagePullPolicy: IfNotPresent          
+          image: {{ .Values.livenessProbe.image.name }}:{{ .Values.livenessProbe.image.tag }}
+          imagePullPolicy: {{ .Values.livenessProbe.image.pullPolicy }}          
           args:
             - --csi-address=/csi/csi.sock
             - --probe-timeout=3s
@@ -74,8 +73,8 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: webdav
-          image: localhost:5000/webdavplugin:v0.0.1
-          imagePullPolicy: IfNotPresent
+          image: {{ .Values.controller.image.name }}:{{ .Values.controller.image.tag }}
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
           securityContext:
             privileged: true
             capabilities:
@@ -112,10 +111,10 @@ spec:
               name: socket-dir
           resources:
             limits:
-              memory: 200Mi
+              memory: {{ .Values.controller.resources.limits.memory }}
             requests:
-              cpu: 10m
-              memory: 20Mi
+              cpu: {{ .Values.controller.resources.requests.cpu }}
+              memory: {{ .Values.controller.resources.requests.memory }}
       volumes:
         - name: pods-mount-dir
           hostPath:

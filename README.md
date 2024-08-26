@@ -4,6 +4,12 @@
 
 This is a repository for webdav csi driver, csi plugin name: `webdav.csi.io`. This driver supports dynamic provisioning of Persistent Volumes via Persistent Volume Claims by creating a new sub directory under webdav server.
 
+### Deploy CSI
+#### With Helm
+```bash
+helm install -n webdav-csi-driver webdav-csi-driver helm/
+```
+
 ### Quick start with kind 
 
 #### Build plugin image
@@ -24,10 +30,7 @@ kind load docker-image registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.
 kind load docker-image localhost:5000/webdavplugin:v0.0.1
 ```
 
-### Deploy CSI 
-```bash
-kubectl apply -f deploy/
-```
+
 
 ### Tests
 ```bash

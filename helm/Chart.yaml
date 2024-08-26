@@ -1,0 +1,4 @@
+apiVersion: v2
+name: webdav-csi-driver
+description: A Helm chart for deploying CSI WebDAV Storage Driver
+version: 0.0.1
