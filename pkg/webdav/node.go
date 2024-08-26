@@ -26,10 +26,11 @@ import (
 	"google.golang.org/grpc/status"
 	"k8s.io/klog/v2"
 
-	"github.com/sys-liqian/csi-driver-webdav/pkg/webdav/mount"
+	"git.ruekov.eu/ruakij/webdav-csi-driver/pkg/webdav/mount"
 )
 
 type NodeServer struct {
+	csi.UnimplementedNodeServer
 	Driver  *Driver
 	mounter mount.Interface
 }
