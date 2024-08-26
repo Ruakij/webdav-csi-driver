@@ -12,11 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:bullseye
+# ---- Build ----
+FROM golang:1.23-alpine AS build
+WORKDIR /build
+# Copy sources
+ADD . .
+# Get dependencies
+RUN make go-build
+# Compile
+RUN CGO_ENABLED=0 go build -a -o webdavplugin ./cmd/webdav
 
-ARG binary=./bin/webdavplugin
-COPY ${binary} /webdavplugin
 
-RUN apt update && apt install -y davfs2
+# ---- Release ----
+FROM alpine AS release
+# Install required packages
+RUN apk add --no-cache davfs2
+
+# Copy build-target
+COPY --from=build /build/webdavplugin .
 
 ENTRYPOINT ["/webdavplugin"]
